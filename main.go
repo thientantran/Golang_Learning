@@ -1,8 +1,11 @@
 package main
 
 import (
+	"github.com/gin-gonic/gin"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -36,6 +39,124 @@ func main() {
 
 	log.Println(db, err)
 
+	// tạo 1 server và
+	r := gin.Default() // giong nhu 1 server
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			// gin.H là 1 map[string]interface{}, nhu 1 dict hoac object
+			"message": "pong",
+		})
+
+	})
+
+	// POST - create a restaurant
+
+	v1 := r.Group("/v1")
+	restaurants := v1.Group("/restaurants")
+	restaurants.POST("", func(c *gin.Context) {
+		var data Restaurant
+		log.Println(data)
+		//shouldbind là lấy data từ request và bind vào, dựa vào kiểu dữ liệu của data và struct đã khai báo ở trên
+		if err := c.ShouldBind(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		db.Create(&data)
+		c.JSON(http.StatusOK, gin.H{
+			"data": data,
+		})
+	})
+
+	// GET a restaurant
+	restaurants.GET("/:id", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		var data Restaurant
+		db.Where("id = ?", id).First(&data)
+		c.JSON(http.StatusOK, gin.H{
+			"data": data,
+		})
+
+	})
+
+	// GET all restaurants
+	restaurants.GET("", func(c *gin.Context) {
+		var data []Restaurant
+
+		type Paging struct {
+			// bắt buộc phải có form để backend nhận dữ liệu trong body - formdata hoặc query-string
+			Page  int `json:"page" form:"page"`
+			Limit int `json:"limit" form:"limit"`
+		}
+
+		var pagingData Paging
+		if err := c.ShouldBind(&pagingData); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		if pagingData.Page == 0 {
+			pagingData.Page = 1
+		}
+		if pagingData.Limit == 0 {
+			pagingData.Limit = 2
+		}
+
+		db.Offset((pagingData.Page - 1) * pagingData.Limit).Order("id desc").Limit(pagingData.Limit).Find(&data)
+		c.JSON(http.StatusOK, gin.H{
+			"data": data,
+		})
+	})
+
+	// UPDATE a restaurant
+	restaurants.PATCH("/:id", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		}
+		var data RestaurantUpdate
+
+		if err := c.ShouldBind(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		db.Where("id = ?", id).Updates(&data)
+
+		c.JSON(http.StatusOK, gin.H{
+			"data": data,
+		})
+	})
+
+	restaurants.DELETE("/:id", func(c *gin.Context) {
+		id, err := strconv.Atoi(c.Param("id"))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		db.Table(Restaurant{}.TableName()).Where("id = ?", id).Delete(nil)
+		c.JSON(http.StatusOK, gin.H{
+			"data": id,
+		})
+	})
+	r.Run()
+
 	// CREATE
 	//
 	//newRestaurant := Restaurant{Name: "KFC", Addr: "KFC Address"}
@@ -46,25 +167,25 @@ func main() {
 	//}
 	//log.Println("New Restaurant ID: ", newRestaurant.Id)
 
-	// Find
-	var myRestaurant Restaurant
-	if err := db.Where("id = ?", 1).First(&myRestaurant).Error; err != nil {
-		log.Println(err)
-	}
-	log.Println("My Restaurant: ", myRestaurant)
-
-	//UPDATE
-	//phải tạo 1 struct Update, trong 1 số trường hợp giá trị là chuỗi rỗng thì cái struct cũ ko update cái chuỗi rỗng này được
-	newData := ""
-	updateData := RestaurantUpdate{Name: &newData}
-	if err := db.Where("id = ?", 1).Updates(&updateData).Error; err != nil {
-		log.Println(err)
-	}
-	log.Println("My Restaurant: ", myRestaurant)
-
-	// DELETE
-	if err := db.Table(Restaurant{}.TableName()).Where("id = ?", 2).Delete(nil).Error; err != nil {
-		log.Println(err)
-	}
+	//// Find
+	//var myRestaurant Restaurant
+	//if err := db.Where("id = ?", 1).First(&myRestaurant).Error; err != nil {
+	//	log.Println(err)
+	//}
+	//log.Println("My Restaurant: ", myRestaurant)
+	//
+	////UPDATE
+	////phải tạo 1 struct Update, trong 1 số trường hợp giá trị là chuỗi rỗng thì cái struct cũ ko update cái chuỗi rỗng này được
+	//newData := ""
+	//updateData := RestaurantUpdate{Name: &newData}
+	//if err := db.Where("id = ?", 1).Updates(&updateData).Error; err != nil {
+	//	log.Println(err)
+	//}
+	//log.Println("My Restaurant: ", myRestaurant)
+	//
+	//// DELETE
+	//if err := db.Table(Restaurant{}.TableName()).Where("id = ?", 2).Delete(nil).Error; err != nil {
+	//	log.Println(err)
+	//}
 
 }
