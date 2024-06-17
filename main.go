@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Food-delivery/component/appctx"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -49,12 +50,12 @@ func main() {
 		})
 
 	})
-
+	appContext := appctx.NewAppContext(db)
 	// POST - create a restaurant
 
 	v1 := r.Group("/v1")
 	restaurants := v1.Group("/restaurants")
-	restaurants.POST("", ginrestaurant.CreateRestaurant(db))
+	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
 
 	// GET a restaurant
 	restaurants.GET("/:id", func(c *gin.Context) {
@@ -129,7 +130,7 @@ func main() {
 		})
 	})
 
-	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(db))
+	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appContext))
 	r.Run()
 
 	// CREATE
