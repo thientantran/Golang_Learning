@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Food-delivery/module/restaurant/transport/ginrestaurant"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -53,21 +54,7 @@ func main() {
 
 	v1 := r.Group("/v1")
 	restaurants := v1.Group("/restaurants")
-	restaurants.POST("", func(c *gin.Context) {
-		var data Restaurant
-		log.Println(data)
-		//shouldbind là lấy data từ request và bind vào, dựa vào kiểu dữ liệu của data và struct đã khai báo ở trên
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		db.Create(&data)
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-	})
+	restaurants.POST("", ginrestaurant.CreateRestaurant(db))
 
 	// GET a restaurant
 	restaurants.GET("/:id", func(c *gin.Context) {
@@ -178,6 +165,8 @@ func main() {
 	////phải tạo 1 struct Update, trong 1 số trường hợp giá trị là chuỗi rỗng thì cái struct cũ ko update cái chuỗi rỗng này được
 	//newData := ""
 	//updateData := RestaurantUpdate{Name: &newData}
+	//// chỗ này vì restaurentUpdate sử dụng pointer nên phải truyền vào địa chỉ của biến, khi đó trỏ tới newdata là rỗng (vẫn có gía trị bộ nhớ), còn nếu cái restaurant struc cũ thì nó sẽ quét và bỏ qua false, số 0 và chuỗi rỗng
+
 	//if err := db.Where("id = ?", 1).Updates(&updateData).Error; err != nil {
 	//	log.Println(err)
 	//}
