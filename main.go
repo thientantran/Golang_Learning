@@ -38,8 +38,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	log.Println(db, err)
+	// hiển thị log khi db hoạt động
+	db = db.Debug()
 
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
@@ -76,35 +76,7 @@ func main() {
 	})
 
 	// GET all restaurants
-	restaurants.GET("", func(c *gin.Context) {
-		var data []Restaurant
-
-		type Paging struct {
-			// bắt buộc phải có form để backend nhận dữ liệu trong body - formdata hoặc query-string
-			Page  int `json:"page" form:"page"`
-			Limit int `json:"limit" form:"limit"`
-		}
-
-		var pagingData Paging
-		if err := c.ShouldBind(&pagingData); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-		if pagingData.Page == 0 {
-			pagingData.Page = 1
-		}
-		if pagingData.Limit == 0 {
-			pagingData.Limit = 2
-		}
-
-		db.Offset((pagingData.Page - 1) * pagingData.Limit).Order("id desc").Limit(pagingData.Limit).Find(&data)
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-	})
+	restaurants.GET("", ginrestaurant.ListRestaurant(appContext))
 
 	// UPDATE a restaurant
 	restaurants.PATCH("/:id", func(c *gin.Context) {
