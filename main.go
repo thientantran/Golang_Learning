@@ -4,6 +4,7 @@ import (
 	"Food-delivery/component/appctx"
 	"Food-delivery/middleware"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
+	"Food-delivery/module/upload/transport/ginupload"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -74,8 +75,10 @@ func main() {
 	})
 
 	// POST - create a restaurant
-
+	r.Static("/static", "./static")
 	v1 := r.Group("/v1")
+	v1.POST("/upload", ginupload.UploadImage(appContext))
+
 	restaurants := v1.Group("/restaurants")
 	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
 
