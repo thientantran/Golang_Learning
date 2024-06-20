@@ -39,6 +39,7 @@ func CreateRestaurant(appCtx appctx.AppContext) gin.HandlerFunc {
 			//return
 			panic(err) // chi duoc panic o tang transport, neu panic o tang biz thi se bi mat stack trace
 		}
-		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data.Id))
+		data.Mask(false)
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data.FakeId.String()))
 	}
 }

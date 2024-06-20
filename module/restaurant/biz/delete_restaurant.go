@@ -33,7 +33,7 @@ func (biz *deleteRestaurantBiz) DeleteRestaurant(context context.Context, id int
 	}
 
 	if err := biz.store.Delete(context, id); err != nil {
-		return err
+		return common.ErrCannotDeleteEntity(restaurantmodel.EntityName, nil)
 	}
-	return common.ErrCannotDeleteEntity(restaurantmodel.EntityName, nil)
+	return nil
 }
