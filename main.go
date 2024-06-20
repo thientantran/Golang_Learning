@@ -33,6 +33,19 @@ func (RestaurantUpdate) TableName() string {
 	return Restaurant{}.TableName()
 }
 func main() {
+
+	//test := Restaurant{
+	//	Id:   1,
+	//	Name: "KFC",
+	//	Addr: "KFC Address",
+	//}
+	//
+	//jsByte, err := json.Marshal(test)
+	//log.Println(string(jsByte), err) //{"id":1,"name":"KFC","addr":"KFC Address"}
+	////json.Unmarshal([]byte("{\"id\":1,\"name\":\"KFC\",\"addr\":\"KFC Address\"}"), &test)
+	//json.Unmarshal(jsByte, &test)
+	//log.Println(test) //{1 KFC KFC Address}
+
 	dsn := os.Getenv("DB_URL")
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
