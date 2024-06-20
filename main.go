@@ -2,6 +2,7 @@ package main
 
 import (
 	"Food-delivery/component/appctx"
+	"Food-delivery/component/uploadprovider"
 	"Food-delivery/middleware"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
 	"Food-delivery/module/upload/transport/ginupload"
@@ -56,9 +57,14 @@ func main() {
 	// hiển thị log khi db hoạt động
 	db = db.Debug()
 
+	AWS_ACCESS_KEY_ID := os.Getenv("AWS_ACCESS_KEY_ID")
+	AWS_SECRET_ACCESS_KEY := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	AWS_REGION := os.Getenv("AWS_REGION")
+	BUCKET_NAME := os.Getenv("BUCKET_NAME")
+	s3Provider := uploadprovider.NewS3Provider(BUCKET_NAME, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, "https://tan-test-golang.s3-ap-southeast-1.amazonaws.com")
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
-	appContext := appctx.NewAppContext(db)
+	appContext := appctx.NewAppContext(db, s3Provider)
 	//co 3 cach dat middleware
 	//1: toan bo
 	r.Use(middleware.Recover(appContext))
