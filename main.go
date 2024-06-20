@@ -2,6 +2,7 @@ package main
 
 import (
 	"Food-delivery/component/appctx"
+	"Food-delivery/middleware"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -43,6 +44,14 @@ func main() {
 
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
+	appContext := appctx.NewAppContext(db)
+	//co 3 cach dat middleware
+	//1: toan bo
+	r.Use(middleware.Recover(appContext))
+	//2: theo nhom
+	//v1 := r.Group("/v1", middleware.Recover(appContext)
+	//3: theo tung route
+	//r.GET("/ping", middleware.Recover(appContext), .....
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			// gin.H là 1 map[string]interface{}, nhu 1 dict hoac object
@@ -50,7 +59,7 @@ func main() {
 		})
 
 	})
-	appContext := appctx.NewAppContext(db)
+
 	// POST - create a restaurant
 
 	v1 := r.Group("/v1")

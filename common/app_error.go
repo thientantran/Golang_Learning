@@ -109,9 +109,9 @@ func ErrCannotGetEntity(entity string, err error) *AppError {
 	)
 }
 
-func ErrorEntityDeleted(entity string) *AppError {
+func ErrEntityDeleted(entity string, err error) *AppError {
 	return NewCustomError(
-		nil,
+		err,
 		fmt.Sprintf("%s has been deleted", strings.ToLower(entity)),
 		fmt.Sprintf("Err%sDeleted", entity),
 	)
@@ -148,3 +148,5 @@ func ErrNoPermission(err error) *AppError {
 		fmt.Sprintf("ErrNoPermission"),
 	)
 }
+
+var RecordNotFound = errors.New("record not found")
