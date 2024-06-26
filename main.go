@@ -6,6 +6,7 @@ import (
 	"Food-delivery/middleware"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
 	"Food-delivery/module/upload/transport/ginupload"
+	"Food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -61,6 +62,7 @@ func main() {
 	AWS_SECRET_ACCESS_KEY := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	AWS_REGION := os.Getenv("AWS_REGION")
 	BUCKET_NAME := os.Getenv("BUCKET_NAME")
+	log.Println(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, BUCKET_NAME)
 	s3Provider := uploadprovider.NewS3Provider(BUCKET_NAME, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, "https://tan-test-golang.s3-ap-southeast-1.amazonaws.com")
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
@@ -85,6 +87,7 @@ func main() {
 	v1 := r.Group("/v1")
 	v1.POST("/upload", ginupload.UploadImage(appContext))
 
+	v1.POST("/register", ginuser.Register(appContext))
 	restaurants := v1.Group("/restaurants")
 	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
 
