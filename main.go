@@ -62,11 +62,12 @@ func main() {
 	AWS_SECRET_ACCESS_KEY := os.Getenv("AWS_SECRET_ACCESS_KEY")
 	AWS_REGION := os.Getenv("AWS_REGION")
 	BUCKET_NAME := os.Getenv("BUCKET_NAME")
+	secretKet := os.Getenv("SYSTEM_SECRET")
 	log.Println(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, BUCKET_NAME)
 	s3Provider := uploadprovider.NewS3Provider(BUCKET_NAME, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, "https://tan-test-golang.s3-ap-southeast-1.amazonaws.com")
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
-	appContext := appctx.NewAppContext(db, s3Provider)
+	appContext := appctx.NewAppContext(db, s3Provider, secretKet)
 	//co 3 cach dat middleware
 	//1: toan bo
 	r.Use(middleware.Recover(appContext))
@@ -88,6 +89,7 @@ func main() {
 	v1.POST("/upload", ginupload.UploadImage(appContext))
 
 	v1.POST("/register", ginuser.Register(appContext))
+	v1.POST("/authenticate", ginuser.Login(appContext))
 	restaurants := v1.Group("/restaurants")
 	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
 

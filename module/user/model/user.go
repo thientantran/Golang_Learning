@@ -78,9 +78,9 @@ func (UserLogin) TableName() string {
 //}
 
 var (
-	ErrUsernameOrPasswordInvalid = common.NewCustomError(
-		errors.New("username or password invalid"),
-		"username or password invalid",
+	ErrEmailOrPasswordInvalid = common.NewCustomError(
+		errors.New("Email or password invalid"),
+		"Email or password invalid",
 		"ErrUsernameOrPasswordInvalid",
 	)
 
