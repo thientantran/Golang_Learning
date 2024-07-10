@@ -9,7 +9,8 @@ import (
 
 func Profile(appCtx appctx.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		data := c.MustGet(common.CurrentUser)
+		data := c.MustGet(common.CurrentUser).(common.Requester)
+		//data.GetUserId()
 		c.JSON(http.StatusOK, common.SimpleSuccessResponse(data))
 	}
 }

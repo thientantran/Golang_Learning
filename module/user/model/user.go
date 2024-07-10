@@ -19,6 +19,7 @@ type User struct {
 	Avatar          *common.Image `json:"avatar,omitempty" gorm:"column:avatar;type:json"`
 }
 
+// implment to get more detail for user
 func (u *User) GetUserId() int {
 	return u.Id
 }

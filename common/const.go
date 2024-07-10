@@ -16,3 +16,9 @@ func AppRecover() {
 		log.Println("Recovered from panic: ", err)
 	}
 }
+
+type Requester interface {
+	GetUserId() int
+	GetEmail() string
+	GetRole() string
+}
