@@ -29,7 +29,7 @@ func (biz *listRestaurantBiz) ListRestaurant(
 	paging *common.Paging,
 ) ([]restaurantmodel.Restaurant, error) {
 	// slice đã là reference type (con trỏ rồi) nên không cần dùng pointer
-	result, err := biz.store.ListDataWithCondition(ctx, filter, paging)
+	result, err := biz.store.ListDataWithCondition(ctx, filter, paging, "User")
 	if err != nil {
 		return nil, err
 	}
