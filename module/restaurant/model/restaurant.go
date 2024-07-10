@@ -2,7 +2,6 @@ package restaurantmodel
 
 import (
 	"Food-delivery/common"
-	usermodel "Food-delivery/module/user/model"
 	"errors"
 	"strings"
 )
@@ -13,13 +12,13 @@ const EntityName = "Restaurant"
 
 type Restaurant struct {
 	common.SQLModel `json:",inline"`
-	Name            string          `json:"name" gorm:"column:name;"`
-	Addr            string          `json:"addr" gorm:"column:addr;"`
-	Type            string          `json:"type" gorm:"column:type;"`
-	Logo            *common.Image   `json:"logo" gorm:"column:logo;"`
-	Cover           *common.Images  `json:"cover" gorm:"column:cover;"`
-	UserId          int             `json:"-" gorm:"column:user_id;"`
-	User            *usermodel.User `json:"user" gorm:"preload:false;"`
+	Name            string             `json:"name" gorm:"column:name;"`
+	Addr            string             `json:"addr" gorm:"column:addr;"`
+	Type            string             `json:"type" gorm:"column:type;"`
+	Logo            *common.Image      `json:"logo" gorm:"column:logo;"`
+	Cover           *common.Images     `json:"cover" gorm:"column:cover;"`
+	UserId          int                `json:"-" gorm:"column:user_id;"`
+	User            *common.SimpleUser `json:"user" gorm:"preload:false;"`
 	// nếu ko có preload false, thì khả năng cao sẽ luôn có user được mapping vào Restaurant khi create/query
 }
 

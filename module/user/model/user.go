@@ -38,6 +38,11 @@ func (User) TableName() string {
 
 func (u *User) Mask(isAdmin bool) {
 	u.GenUID(common.DbTypeUser)
+	//Cach 1 - loai bo thong tin: không nên dùng
+	//if !isAdmin {
+	//	u.Phone = ""
+	//	u.Email = ""
+	//}
 }
 
 type UserCreate struct {
