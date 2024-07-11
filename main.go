@@ -4,17 +4,12 @@ import (
 	"Food-delivery/component/appctx"
 	"Food-delivery/component/uploadprovider"
 	"Food-delivery/middleware"
-	"Food-delivery/module/restaurant/transport/ginrestaurant"
-	"Food-delivery/module/upload/transport/ginupload"
-	"Food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 type Restaurant struct {
@@ -86,67 +81,8 @@ func main() {
 	// POST - create a restaurant
 	r.Static("/static", "./static")
 	v1 := r.Group("/v1")
-	v1.POST("/upload", ginupload.UploadImage(appContext))
-
-	v1.POST("/register", ginuser.Register(appContext))
-	v1.POST("/authenticate", ginuser.Login(appContext))
-	v1.GET("/profile", middleware.RequireAuth(appContext), ginuser.Profile(appContext))
-	restaurants := v1.Group("/restaurants", middleware.RequireAuth(appContext))
-	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
-
-	// GET a restaurant
-	restaurants.GET("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		var data Restaurant
-		db.Where("id = ?", id).First(&data)
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-
-	})
-
-	// GET all restaurants
-	restaurants.GET("", ginrestaurant.ListRestaurant(appContext))
-
-	// UPDATE a restaurant
-	restaurants.PATCH("/:id", func(c *gin.Context) {
-		id, err := strconv.Atoi(c.Param("id"))
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-		}
-		var data RestaurantUpdate
-
-		if err := c.ShouldBind(&data); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		db.Where("id = ?", id).Updates(&data)
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
-	})
-
-	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appContext))
-
-	admin := v1.Group("/admin", middleware.RequireAuth(appContext), middleware.RoleRequired(appContext, "admin", "mod"))
-
-	{
-		admin.GET("profile", ginuser.Profile(appContext))
-	}
-
+	setupRoute(appContext, v1)
+	setupAdminRoute(appContext, v1)
 	r.Run()
 
 	// CREATE
