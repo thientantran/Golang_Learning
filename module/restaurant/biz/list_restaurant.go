@@ -4,6 +4,7 @@ import (
 	"Food-delivery/common"
 	restaurantmodel "Food-delivery/module/restaurant/model"
 	"context"
+	"log"
 )
 
 type ListRestaurantStore interface {
@@ -15,12 +16,19 @@ type ListRestaurantStore interface {
 	) ([]restaurantmodel.Restaurant, error)
 }
 
-type listRestaurantBiz struct {
-	store ListRestaurantStore
+type LikeRestaurantStore interface {
+	GetRestaurantLikes(ctx context.Context, ids []int) (map[int]int, error)
+	//GetRestaurantLikesOld(ctx context.Context, ids []int) ([]restaurantlikemodel.Like, error)
+	//ko nen lam vay vì phải for qua mảng này, rồi phải for thêm 1 lần nữa để tìm số like, phức tạp thuật toán
 }
 
-func NewListRestaurantBiz(store ListRestaurantStore) *listRestaurantBiz {
-	return &listRestaurantBiz{store: store}
+type listRestaurantBiz struct {
+	store     ListRestaurantStore
+	likeStore LikeRestaurantStore
+}
+
+func NewListRestaurantBiz(store ListRestaurantStore, likeStore LikeRestaurantStore) *listRestaurantBiz {
+	return &listRestaurantBiz{store: store, likeStore: likeStore}
 }
 
 func (biz *listRestaurantBiz) ListRestaurant(
@@ -33,5 +41,22 @@ func (biz *listRestaurantBiz) ListRestaurant(
 	if err != nil {
 		return nil, err
 	}
+
+	ids := make([]int, len(result))
+	for i := range ids {
+		ids[i] = result[i].Id
+	}
+
+	likeMap, err := biz.likeStore.GetRestaurantLikes(ctx, ids)
+
+	if err != nil {
+		log.Println(err)
+		return result, nil
+	}
+
+	for i, item := range result {
+		result[i].LikedCount = likeMap[item.Id]
+	}
+
 	return result, nil
 }
