@@ -4,31 +4,22 @@ import (
 	"Food-delivery/common"
 	restaurantmodel "Food-delivery/module/restaurant/model"
 	"context"
-	"log"
 )
 
-type ListRestaurantStore interface {
-	ListDataWithCondition(
+type ListRestaurantRepo interface {
+	ListRestaurant(
 		context context.Context,
 		filter *restaurantmodel.Filter,
 		paging *common.Paging,
-		moreKeys ...string,
 	) ([]restaurantmodel.Restaurant, error)
 }
 
-type LikeRestaurantStore interface {
-	GetRestaurantLikes(ctx context.Context, ids []int) (map[int]int, error)
-	//GetRestaurantLikesOld(ctx context.Context, ids []int) ([]restaurantlikemodel.Like, error)
-	//ko nen lam vay vì phải for qua mảng này, rồi phải for thêm 1 lần nữa để tìm số like, phức tạp thuật toán
-}
-
 type listRestaurantBiz struct {
-	store     ListRestaurantStore
-	likeStore LikeRestaurantStore
+	repo ListRestaurantRepo
 }
 
-func NewListRestaurantBiz(store ListRestaurantStore, likeStore LikeRestaurantStore) *listRestaurantBiz {
-	return &listRestaurantBiz{store: store, likeStore: likeStore}
+func NewListRestaurantBiz(repo ListRestaurantRepo) *listRestaurantBiz {
+	return &listRestaurantBiz{repo: repo}
 }
 
 func (biz *listRestaurantBiz) ListRestaurant(
@@ -37,26 +28,11 @@ func (biz *listRestaurantBiz) ListRestaurant(
 	paging *common.Paging,
 ) ([]restaurantmodel.Restaurant, error) {
 	// slice đã là reference type (con trỏ rồi) nên không cần dùng pointer
-	result, err := biz.store.ListDataWithCondition(ctx, filter, paging, "User")
+	result, err := biz.repo.ListRestaurant(ctx, filter, paging)
 	if err != nil {
-		return nil, err
+		return nil, common.ErrCannotListEntity(restaurantmodel.EntityName, err)
 	}
 
-	ids := make([]int, len(result))
-	for i := range ids {
-		ids[i] = result[i].Id
-	}
-
-	likeMap, err := biz.likeStore.GetRestaurantLikes(ctx, ids)
-
-	if err != nil {
-		log.Println(err)
-		return result, nil
-	}
-
-	for i, item := range result {
-		result[i].LikedCount = likeMap[item.Id]
-	}
-
+	// nghiệp vụ cua biz chỉ có trách nhiệm là list, chứ ko có trách nhiệm tính toán, tầng store cũng chỉ có trách nhiệm là việc với DB, do đó cần tạo 1 tầng repository để làm việc tính toán cho tầng biz
 	return result, nil
 }
