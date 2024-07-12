@@ -4,6 +4,7 @@ import (
 	"Food-delivery/common"
 	restaurantlikemodel "Food-delivery/module/restaurantlike/model"
 	"context"
+	"fmt"
 	"github.com/btcsuite/btcutil/base58"
 	"time"
 )
@@ -83,16 +84,17 @@ func (s *sqlStore) GetUsersLikeRestaurant(ctx context.Context,
 
 	users := make([]common.SimpleUser, len(result))
 
-	for i := range result {
-		//result[i].User.CreatedAt = item.CreateAt
-		//result[i].User.UpdateAt = nil
+	for i, item := range result {
+		// thay cái này để khi hiển thị createat ở user là thời gian của like, chứ ko phải là thời gian tạo user
+		result[i].User.CreatedAt = item.CreateAt
+		result[i].User.UpdateAt = nil
 		users[i] = *result[i].User
 
-		//if i == len(result)-1 {
-		//	//cursorStr := base58.Encode([]byte(fmt.Sprintf("#{item.CreateAt.Format(timeLayout)}")))
-		//	cursorStr := base58.Encode([]byte(fmt.Sprintf("%s", item.CreateAt.Format(timeLayout))))
-		//	paging.NextCursor = cursorStr
-		//}
+		if i == len(result)-1 {
+			//cursorStr := base58.Encode([]byte(fmt.Sprintf("#{item.CreateAt.Format(timeLayout)}")))
+			cursorStr := base58.Encode([]byte(fmt.Sprintf("%s", item.CreateAt.Format(timeLayout))))
+			paging.NextCursor = cursorStr
+		}
 	}
 
 	return users, nil
