@@ -4,6 +4,7 @@ import (
 	"Food-delivery/component/appctx"
 	"Food-delivery/middleware"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
+	"Food-delivery/module/restaurantlike/transport/ginrstlike"
 	"Food-delivery/module/upload/transport/ginupload"
 	"Food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
@@ -66,4 +67,5 @@ func setupRoute(appContext appctx.AppContext, v1 *gin.RouterGroup) {
 	})
 
 	restaurants.DELETE("/:id", ginrestaurant.DeleteRestaurant(appContext))
+	restaurants.POST("/:id/like", ginrstlike.UserLikeRestaurant(appContext))
 }

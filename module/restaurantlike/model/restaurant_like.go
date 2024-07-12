@@ -11,7 +11,7 @@ const EntityName = "UserLikeRestaurant"
 type Like struct {
 	RestaurantId int                `json:"restaurant_id" gorm:"column:restaurant_id;"`
 	UserId       int                `json:"user_id" gorm:"column:user_id;"`
-	CreateAt     *time.Time         `json:"create_at" gorm:"column:create_at;"`
+	CreateAt     *time.Time         `json:"create_at" gorm:"column:created_at;autoCreateTime"`
 	User         *common.SimpleUser `json:"user" gorm:"preload:false"`
 }
 
