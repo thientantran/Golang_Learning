@@ -20,7 +20,7 @@ type Restaurant struct {
 	UserId          int                `json:"-" gorm:"column:user_id;"`
 	User            *common.SimpleUser `json:"user" gorm:"preload:false;"`
 	// nếu ko có preload false, thì khả năng cao sẽ luôn có user được mapping vào Restaurant khi create/query
-	LikedCount int `json:"liked_count" gorm:"-"`
+	LikedCount int `json:"liked_count" gorm:"column:liked_count; "`
 }
 
 // tạo 1 bảng riêng cho lưu trữ iamge, sau khi upload thì thông tin sẽ được lưu trong bảng đó, chỉ trả về id để lưu vào bảng restaurant
