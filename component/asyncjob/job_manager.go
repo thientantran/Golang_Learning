@@ -1,6 +1,7 @@
 package asyncjob
 
 import (
+	"Food-delivery/common"
 	"context"
 	"log"
 	"sync"
@@ -39,19 +40,19 @@ func (g *group) runJob(ctx context.Context, j Job) error {
 }
 
 func (g *group) Run(ctx context.Context) error {
-	//g.wg.Add(len(g.jobs))
-
+	g.wg.Add(len(g.jobs))
+	// waitgroup , khi có n goroutine, thì truyền n vào waitgroup để biết khi nào n goroutine xong, mỗi goroutine xong thì waitgroup sẽ done, đúng số n done thì sẽ xong
 	errChan := make(chan error, len(g.jobs))
 
 	for i, _ := range g.jobs {
-		//if g.isConcurrent {
-		//	go func(aj Job) {
-		//		defer common.AppRecover()
-		//		errChan <- g.runJob(ctx, aj)
-		//		g.wg.Done()
-		//	}(g.jobs[i])
-		//	continue
-		//}
+		if g.isConcurrent {
+			go func(aj Job) {
+				defer common.AppRecover()
+				errChan <- g.runJob(ctx, aj)
+				g.wg.Done()
+			}(g.jobs[i])
+			continue
+		}
 
 		job := g.jobs[i]
 
@@ -63,8 +64,10 @@ func (g *group) Run(ctx context.Context) error {
 		}
 
 		errChan <- err
-		//g.wg.Done()
+		g.wg.Done()
 	}
+	// tại sao chuyển lên đây, để đợi tất cả routine chạy xong, vì khi để ở dưới, mà code đổi return err trước thì sẽ không chạy hết các goroutine
+	g.wg.Wait()
 
 	//close(errChan)
 
@@ -79,9 +82,9 @@ func (g *group) Run(ctx context.Context) error {
 	for i := 1; i <= len(g.jobs); i++ {
 		v := <-errChan
 		if v != nil {
-			err = v
+			return v
 		}
 	}
-	//g.wg.Wait()
+
 	return err
 }
