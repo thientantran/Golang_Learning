@@ -1,11 +1,10 @@
 package rstlikebiz
 
 import (
-	"Food-delivery/common"
+	"Food-delivery/component/asyncjob"
 	restaurantlikemodel "Food-delivery/module/restaurantlike/model"
 	"context"
 	"log"
-	"time"
 )
 
 type UserDislikeRestaurantStore interface {
@@ -38,24 +37,30 @@ func (biz *userDislikeRestaurantBiz) DislikeRestaurant(
 		return restaurantlikemodel.ErrCannotDisLikeRestaurant(err)
 	}
 
-	go func() {
-		defer common.AppRecover()
-		// ví dụ cái này tốn time để xử lý
-		time.Sleep(3 * time.Second)
-		if err := biz.decStore.DecreaseLikeCount(ctx, restaurantId); err != nil {
-			log.Println(err)
-			// ko panic gì hết,
-
-			// muốn retry lại 3 lần mỗi khi gặp lỗi, nhưng lặp đi lặp lại rất mệt, và khoản cách mỗi lần retry muốn khác nhau
-			for i := 0; i < 10; i++ {
-				err := biz.decStore.DecreaseLikeCount(ctx, restaurantId)
-				if err == nil {
-					break
-				}
-				time.Sleep(2 * time.Second)
-			}
-
-		}
-	}()
+	j := asyncjob.NewJob(func(ctx2 context.Context) error {
+		return biz.decStore.DecreaseLikeCount(ctx2, restaurantId)
+	})
+	if err := asyncjob.NewGroup(true, j).Run(ctx); err != nil {
+		log.Println(err)
+	}
+	//go func() {
+	//	defer common.AppRecover()
+	//	// ví dụ cái này tốn time để xử lý
+	//	time.Sleep(3 * time.Second)
+	//	if err := biz.decStore.DecreaseLikeCount(ctx, restaurantId); err != nil {
+	//		log.Println(err)
+	//		// ko panic gì hết,
+	//
+	//		// muốn retry lại 3 lần mỗi khi gặp lỗi, nhưng lặp đi lặp lại rất mệt, và khoản cách mỗi lần retry muốn khác nhau
+	//		for i := 0; i < 10; i++ {
+	//			err := biz.decStore.DecreaseLikeCount(ctx, restaurantId)
+	//			if err == nil {
+	//				break
+	//			}
+	//			time.Sleep(2 * time.Second)
+	//		}
+	//
+	//	}
+	//}()
 	return nil
 }

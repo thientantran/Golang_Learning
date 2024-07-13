@@ -1,11 +1,10 @@
 package rstlikebiz
 
 import (
-	"Food-delivery/common"
+	"Food-delivery/component/asyncjob"
 	restaurantlikemodel "Food-delivery/module/restaurantlike/model"
 	"context"
 	"log"
-	"time"
 )
 
 type UserLikeRestaurantStore interface {
@@ -37,17 +36,22 @@ func (biz *userLikeRestaurantBiz) LikeRestaurant(
 	if err != nil {
 		return restaurantlikemodel.ErrCannotLikeRestaurant(err)
 	}
-
-	// cái này ko quan trọng, nên có thể để vào đây cho nó chạy ngầm
-	go func() {
-		defer common.AppRecover()
-		// ví dụ cái này tốn time để xử lý
-		time.Sleep(3 * time.Second)
-		if err := biz.incStore.IncreaseLikeCount(ctx, data.RestaurantId); err != nil {
-			log.Println(err)
-			// ko panic gì hết,
-		}
-	}()
+	j := asyncjob.NewJob(func(ctx2 context.Context) error {
+		return biz.incStore.IncreaseLikeCount(ctx2, data.RestaurantId)
+	})
+	if err := asyncjob.NewGroup(true, j).Run(ctx); err != nil {
+		log.Println(err)
+	}
+	//// cái này ko quan trọng, nên có thể để vào đây cho nó chạy ngầm
+	//go func() {
+	//	defer common.AppRecover()
+	//	// ví dụ cái này tốn time để xử lý
+	//	time.Sleep(3 * time.Second)
+	//	if err := biz.incStore.IncreaseLikeCount(ctx, data.RestaurantId); err != nil {
+	//		log.Println(err)
+	//		// ko panic gì hết,
+	//	}
+	//}()
 
 	return nil
 }
