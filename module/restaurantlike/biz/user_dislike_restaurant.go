@@ -45,6 +45,16 @@ func (biz *userDislikeRestaurantBiz) DislikeRestaurant(
 		if err := biz.decStore.DecreaseLikeCount(ctx, restaurantId); err != nil {
 			log.Println(err)
 			// ko panic gì hết,
+
+			// muốn retry lại 3 lần mỗi khi gặp lỗi, nhưng lặp đi lặp lại rất mệt, và khoản cách mỗi lần retry muốn khác nhau
+			for i := 0; i < 10; i++ {
+				err := biz.decStore.DecreaseLikeCount(ctx, restaurantId)
+				if err == nil {
+					break
+				}
+				time.Sleep(2 * time.Second)
+			}
+
 		}
 	}()
 	return nil
