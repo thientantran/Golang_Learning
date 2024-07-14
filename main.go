@@ -6,7 +6,6 @@ import (
 	"Food-delivery/middleware"
 	"Food-delivery/pubsub/localpb"
 	"Food-delivery/subscriber"
-	"context"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -69,8 +68,8 @@ func main() {
 	appContext := appctx.NewAppContext(db, s3Provider, secretKet, ps)
 
 	// setup subcribers
-	subscriber.Setup(appContext, context.Background())
-
+	//subscriber.Setup(appContext, context.Background())
+	_ = subscriber.NewEngine(appContext).Start()
 	//co 3 cach dat middleware
 	//1: toan bo
 	r.Use(middleware.Recover(appContext))
