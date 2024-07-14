@@ -1,8 +1,9 @@
 package rstlikebiz
 
 import (
-	"Food-delivery/component/asyncjob"
+	"Food-delivery/common"
 	restaurantlikemodel "Food-delivery/module/restaurantlike/model"
+	"Food-delivery/pubsub"
 	"context"
 	"log"
 )
@@ -11,20 +12,24 @@ type UserLikeRestaurantStore interface {
 	Create(ctx context.Context, data *restaurantlikemodel.Like) error
 }
 
-type IncreaseLikeCountStore interface {
-	IncreaseLikeCount(ctx context.Context, id int) error
-}
+//type IncreaseLikeCountStore interface {
+//	IncreaseLikeCount(ctx context.Context, id int) error
+//}
 
 type userLikeRestaurantBiz struct {
-	store    UserLikeRestaurantStore
-	incStore IncreaseLikeCountStore
+	store UserLikeRestaurantStore
+	//incStore IncreaseLikeCountStore
+	ps pubsub.Pubsub
 }
 
 func NewUserLikeRestaurantBiz(
 	store UserLikeRestaurantStore,
-	incStore IncreaseLikeCountStore,
+	//incStore IncreaseLikeCountStore,
+	ps pubsub.Pubsub,
 ) *userLikeRestaurantBiz {
-	return &userLikeRestaurantBiz{store: store, incStore: incStore}
+	return &userLikeRestaurantBiz{store: store,
+		//incStore: incStore,
+		ps: ps}
 }
 
 func (biz *userLikeRestaurantBiz) LikeRestaurant(
@@ -36,12 +41,20 @@ func (biz *userLikeRestaurantBiz) LikeRestaurant(
 	if err != nil {
 		return restaurantlikemodel.ErrCannotLikeRestaurant(err)
 	}
-	j := asyncjob.NewJob(func(ctx2 context.Context) error {
-		return biz.incStore.IncreaseLikeCount(ctx2, data.RestaurantId)
-	})
-	if err := asyncjob.NewGroup(true, j).Run(ctx); err != nil {
+
+	// send message
+	if err := biz.ps.Publish(ctx, common.TopicUserLikeRestaurant, pubsub.NewMessage(data)); err != nil {
 		log.Println(err)
 	}
+
+	////side effect
+	//j := asyncjob.NewJob(func(ctx2 context.Context) error {
+	//	return biz.incStore.IncreaseLikeCount(ctx2, data.RestaurantId)
+	//})
+	//if err := asyncjob.NewGroup(true, j).Run(ctx); err != nil {
+	//	log.Println(err)
+	//}
+
 	//// cái này ko quan trọng, nên có thể để vào đây cho nó chạy ngầm
 	//go func() {
 	//	defer common.AppRecover()

@@ -4,6 +4,9 @@ import (
 	"Food-delivery/component/appctx"
 	"Food-delivery/component/uploadprovider"
 	"Food-delivery/middleware"
+	"Food-delivery/pubsub/localpb"
+	"Food-delivery/subscriber"
+	"context"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -60,9 +63,14 @@ func main() {
 	secretKet := os.Getenv("SYSTEM_SECRET")
 	log.Println(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, BUCKET_NAME)
 	s3Provider := uploadprovider.NewS3Provider(BUCKET_NAME, AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, "https://tan-test-golang.s3-ap-southeast-1.amazonaws.com")
+	ps := localpb.NewPubSub()
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
-	appContext := appctx.NewAppContext(db, s3Provider, secretKet)
+	appContext := appctx.NewAppContext(db, s3Provider, secretKet, ps)
+
+	// setup subcribers
+	subscriber.Setup(appContext, context.Background())
+
 	//co 3 cach dat middleware
 	//1: toan bo
 	r.Use(middleware.Recover(appContext))
