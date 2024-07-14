@@ -1,8 +1,9 @@
 package rstlikebiz
 
 import (
-	"Food-delivery/component/asyncjob"
+	"Food-delivery/common"
 	restaurantlikemodel "Food-delivery/module/restaurantlike/model"
+	"Food-delivery/pubsub"
 	"context"
 	"log"
 )
@@ -11,20 +12,24 @@ type UserDislikeRestaurantStore interface {
 	Delete(ctx context.Context, userId, restaurantId int) error
 }
 
-type DecreaseLikeCountStore interface {
-	DecreaseLikeCount(ctx context.Context, id int) error
-}
+//type DecreaseLikeCountStore interface {
+//	DecreaseLikeCount(ctx context.Context, id int) error
+//}
 
 type userDislikeRestaurantBiz struct {
-	store    UserDislikeRestaurantStore
-	decStore DecreaseLikeCountStore
+	store UserDislikeRestaurantStore
+	//decStore DecreaseLikeCountStore
+	ps pubsub.Pubsub
 }
 
 func NewUserDisLikeRestaurantBiz(
 	store UserDislikeRestaurantStore,
-	decStore DecreaseLikeCountStore,
+	//decStore DecreaseLikeCountStore,
+	ps pubsub.Pubsub,
 ) *userDislikeRestaurantBiz {
-	return &userDislikeRestaurantBiz{store: store, decStore: decStore}
+	return &userDislikeRestaurantBiz{store: store,
+		//decStore: decStore,
+		ps: ps}
 }
 
 func (biz *userDislikeRestaurantBiz) DislikeRestaurant(
@@ -37,12 +42,19 @@ func (biz *userDislikeRestaurantBiz) DislikeRestaurant(
 		return restaurantlikemodel.ErrCannotDisLikeRestaurant(err)
 	}
 
-	j := asyncjob.NewJob(func(ctx2 context.Context) error {
-		return biz.decStore.DecreaseLikeCount(ctx2, restaurantId)
-	})
-	if err := asyncjob.NewGroup(true, j).Run(ctx); err != nil {
+	//send message
+	if err := biz.ps.Publish(ctx, common.TopicUserDisLikeRestaurant, pubsub.NewMessage(&restaurantlikemodel.Like{RestaurantId: restaurantId})); err != nil {
 		log.Println(err)
 	}
+
+	//side effect
+	//j := asyncjob.NewJob(func(ctx2 context.Context) error {
+	//	return biz.decStore.DecreaseLikeCount(ctx2, restaurantId)
+	//})
+	//if err := asyncjob.NewGroup(true, j).Run(ctx); err != nil {
+	//	log.Println(err)
+	//}
+
 	//go func() {
 	//	defer common.AppRecover()
 	//	// ví dụ cái này tốn time để xử lý

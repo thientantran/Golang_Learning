@@ -12,7 +12,8 @@ const (
 )
 
 const (
-	TopicUserLikeRestaurant = "TopicUserLikeRestaurant"
+	TopicUserLikeRestaurant    = "TopicUserLikeRestaurant"
+	TopicUserDisLikeRestaurant = "TopicUserDisLikeRestaurant"
 )
 
 func AppRecover() {
