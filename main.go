@@ -2,10 +2,13 @@ package main
 
 import (
 	"Food-delivery/component/appctx"
+	"Food-delivery/component/tokenprovider/jwt"
 	"Food-delivery/component/uploadprovider"
 	"Food-delivery/middleware"
+	userstorage "Food-delivery/module/user/storage"
 	"Food-delivery/pubsub/localpb"
 	"Food-delivery/subscriber"
+	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	socketio "github.com/googollee/go-socket.io"
@@ -205,6 +208,48 @@ func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
 	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
 		fmt.Println("closed", reason)
 		// remove socket from socket engine (from app context)
+	})
+
+	server.OnEvent("/", "authenticate", func(s socketio.Conn, token string) {
+		// validate token
+		// if false: s.Close() and return
+
+		// if true
+		// => UserId
+		// Fetch db find user by ID
+		// Here: s beliongs to who? (user_id_
+		// We need a map [user_id][]socketio.Conn
+
+		db := appCtx.GetMainDBConnection()
+		store := userstorage.NewSQLStore(db)
+
+		tokenProvider := jwt.NewTokenJWTProvider(appCtx.SecretKey())
+
+		payload, err := tokenProvider.Validate(token)
+
+		if err != nil {
+			s.Emit("authentication_failed", err)
+			s.Close()
+			return
+		}
+
+		user, err := store.FindUser(context.Background(), map[string]interface{}{"id": payload.UserID})
+
+		if err != nil {
+			s.Emit("authentication_failed", err.Error())
+			s.Close()
+			return
+		}
+
+		if user.Status == 0 {
+			s.Emit("authentication_failed", "you have been banned/deleted")
+			s.Close()
+			return
+		}
+
+		user.Mask(false)
+		s.Emit("your_profile", user)
+
 	})
 
 	server.OnEvent("/", "test", func(s socketio.Conn, msg string) {

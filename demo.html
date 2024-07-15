@@ -23,6 +23,8 @@
         socket.emit("test", "hello server")
         //
         socket.emit("notice", {name: "Tan Tran", age:30})
+
+        socket.emit("authenticate","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwYXlsb2FkIjp7InVzZXJfaWQiOjIsInJvbGUiOiJhZG1pbiJ9LCJleHAiOjE3MjM2Mjk2NzMsImlhdCI6MTcyMTAzNzY3M30.Y9lPMWhkOdQYqcJPNAPoB_UNM9vrvGNlgWOAKWWJj2U")
     });
 
     socket.on("test", (msg) => console.log("test:", msg))
