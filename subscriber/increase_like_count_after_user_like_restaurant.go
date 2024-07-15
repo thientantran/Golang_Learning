@@ -10,7 +10,7 @@ import (
 
 type HasRestaurantId interface {
 	GetRestaurantId() int
-	//GetUserId() int
+	GetUserId() int
 }
 
 //func IncreaseLikeCountAfterUserLikeRestaurant(appCtx appctx.AppContext, ctx context.Context) {
@@ -62,6 +62,18 @@ func PushNotificationWhenUserLikeRestaurant(appCtx appctx.AppContext) consumerJo
 			likeData := message.Data().(HasRestaurantId)
 			log.Println("Push notification when user like restaurant: ", likeData.GetRestaurantId())
 
+			return nil
+		},
+	}
+}
+
+func EmitRealtimeAfterUserLikeRestaurant(appCtx appctx.AppContext) consumerJob {
+	return consumerJob{
+		Title: "Realtime emit After User Like Restaurant",
+		Hld: func(ctx context.Context, message *pubsub.Message) error {
+			likeData := message.Data().(HasRestaurantId)
+			//vì realtime engine bỏ vào AppContext, nên lấy ra rồi emit được
+			appCtx.GetRealTimeEngine().EmitToUser(likeData.GetUserId(), string(message.Channel()), likeData)
 			return nil
 		},
 	}

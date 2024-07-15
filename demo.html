@@ -52,7 +52,7 @@
 
     socket.on("your_profile", (msg) => console.log("your profile", msg));
     socket.on("authentication_failed", (msg) => console.log("authentication_failed", msg));
-
+    // Lắng nghe realtime khi like
     socket.on("TopicUserLikeRestaurant", (data)=> console.log("TopicUserLikeRestaurant", data))
 
     socket.on("disconnect", () => console.log("Socket is disconnected"))

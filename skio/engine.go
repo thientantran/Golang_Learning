@@ -143,6 +143,7 @@ func (engine *rtEngine) Run(appCtx AppContext, r *gin.Engine) error {
 
 		user.Mask(false)
 
+		//important
 		appSck := NewAppSocket(s, user)
 		engine.saveAppSocket(user.Id, appSck)
 
