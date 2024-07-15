@@ -17,6 +17,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Restaurant struct {
@@ -152,8 +153,8 @@ func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
 		//s.SetContext("")
 		fmt.Println("Socket connected:", s.ID(), " IP:", s.RemoteAddr())
 
-		//s.Join("shipper")
-		//server.BroadcastToRoom("/", "shipper", "hello", "shipper")
+		s.Join("shipper")
+		server.BroadcastToRoom("/", "shipper", "test", "shipper")
 
 		// sau khi kết nối xong thì gửi client
 		s.Emit("test", "world")
@@ -190,6 +191,12 @@ func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
 
 		return nil
 	})
+
+	go func() {
+		for range time.NewTicker(time.Second).C {
+			server.BroadcastToRoom("/", "shipper", "test", "Wellcome to shipper room")
+		}
+	}()
 
 	server.OnError("/", func(s socketio.Conn, e error) {
 		fmt.Println("meet error:", e)
