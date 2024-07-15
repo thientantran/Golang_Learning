@@ -6,7 +6,12 @@ import (
 	"Food-delivery/middleware"
 	"Food-delivery/pubsub/localpb"
 	"Food-delivery/subscriber"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
+	"github.com/googollee/go-socket.io/engineio"
+	"github.com/googollee/go-socket.io/engineio/transport"
+	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -65,6 +70,7 @@ func main() {
 	ps := localpb.NewPubSub()
 	// tạo 1 server và
 	r := gin.Default() // giong nhu 1 server
+
 	appContext := appctx.NewAppContext(db, s3Provider, secretKet, ps)
 
 	// setup subcribers
@@ -90,6 +96,10 @@ func main() {
 	v1 := r.Group("/v1")
 	setupRoute(appContext, v1)
 	setupAdminRoute(appContext, v1)
+
+	r.StaticFile("/demo/", "demo.html")
+	startSocketIOServer(r, appContext)
+
 	r.Run()
 
 	// CREATE
@@ -126,3 +136,88 @@ func main() {
 	//}
 
 }
+
+func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
+	//server, err := socketio.NewServer(nil)
+	server, err := socketio.NewServer(&engineio.Options{
+		Transports: []transport.Transport{websocket.Default},
+	})
+
+	log.Println("Create connect socket", server)
+	if err != nil {
+		log.Println("socket io server error: ", err)
+	}
+
+	server.OnConnect("/", func(s socketio.Conn) error {
+		//s.SetContext("")
+		fmt.Println("Socket connected:", s.ID(), " IP:", s.RemoteAddr())
+
+		//s.Join("shipper")
+		//server.BroadcastToRoom("/", "shipper", "hello", "shipper")
+
+		// sau khi kết nối xong thì gửi client
+		s.Emit("test", "world")
+
+		return nil
+	})
+
+	server.OnError("/", func(s socketio.Conn, e error) {
+		fmt.Println("meet error:", e)
+	})
+
+	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+		fmt.Println("closed", reason)
+		// remove socket from socket engine (from app context)
+	})
+
+	server.OnEvent("/", "test", func(s socketio.Conn, msg string) {
+		log.Println("test event: ", msg)
+	})
+
+	type Person struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
+
+	server.OnEvent("/", "notice", func(s socketio.Conn, p Person) {
+		fmt.Println("server receive notice", p.Name, p.Age)
+
+		p.Age = 33
+		s.Emit("notice", p)
+	})
+
+	go server.Serve()
+	//defer server.Close() // bỏ cái này vào thì ko work
+	engine.GET("/socket.io/*any", gin.WrapH(server))
+	engine.POST("/socket.io/*any", gin.WrapH(server))
+}
+
+//func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
+//	server, err := socketio.NewServer(nil)
+//	if err != nil {
+//		log.Fatalf("Failed to create socket.io server: %v", err)
+//	}
+//
+//	server.OnConnect("/", func(s socketio.Conn) error {
+//		fmt.Println("Socket connected:", s.ID(), " IP:", s.RemoteAddr())
+//		s.Emit("test", "world")
+//		return nil
+//	})
+//
+//	// Add more event handlers as needed...
+//
+//	go func() {
+//		if err := server.Serve(); err != nil {
+//			// Detailed logging for EOF or other errors
+//			if err == io.EOF {
+//				log.Println("Server stopped: client disconnected")
+//			} else {
+//				log.Fatalf("socketio listen error: %s\n", err)
+//			}
+//		}
+//	}()
+//	defer server.Close()
+//
+//	engine.GET("/socket.io/*any", gin.WrapH(server))
+//	engine.POST("/socket.io/*any", gin.WrapH(server))
+//}

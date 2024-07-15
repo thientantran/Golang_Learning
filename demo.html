@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Demo Socket IO</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.js"></script>
+</head>
+<body>
+    <div id="main">
+        Demo Socket IO
+    </div>
+
+<script>
+    // const socket = io("",{ transports: ['websocket']});
+    const socket = io("",{ transports: ['websocket'], upgrade: false });
+
+    //Setting upgrade: false in the Socket.IO client configuration forces the connection to use WebSockets directly without trying to upgrade from long-polling to WebSockets. Normally, Socket.IO starts with long-polling for maximum compatibility and then upgrades to WebSockets if both the client and server support it. By specifying upgrade: false, you bypass this initial long-polling phase, leading to a direct WebSocket connection. This can resolve issues where the upgrade process fails due to network restrictions, server configuration, or compatibility issues, ensuring that the connection uses WebSockets from the start.
+    var lockTimer = null;
+
+    socket.on("connect", () => {
+        console.log("Connected");
+
+        // socket.emit("test", "hello server")
+        //
+        // socket.emit("notice", {name: "Tan Tran", age:30})
+    });
+
+    socket.on("test", (msg) => console.log("test:", msg))
+    socket.on("notice", (p) => console.log("notice", p))
+
+    socket.on("authenticated", (msg) => {
+        console.log("authenticated", msg)
+
+        if(locTimer != null) {
+            clearInterval(lockTimer)
+        }
+
+        lockTimer = setInterval(() => {
+            socket.emit("UserUpdateLocation", {lat: 10.123, lng: 106.123})
+        }, 3000)
+    })
+
+    socket.on("your_profile", (msg) => console.log("your profile", msg));
+    socket.on("authentication_failed", (msg) => console.log("authentication_failed", msg));
+
+    socket.on("TopicUserLikeRestaurant", (data)=> console.log("TopicUserLikeRestaurant", data))
+
+    socket.on("disconnect", () => console.log("Socket is disconnected"))
+
+
+
+</script>
+</body>
+</html>
