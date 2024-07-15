@@ -20,9 +20,9 @@
     socket.on("connect", () => {
         console.log("Connected");
 
-        // socket.emit("test", "hello server")
+        socket.emit("test", "hello server")
         //
-        // socket.emit("notice", {name: "Tan Tran", age:30})
+        socket.emit("notice", {name: "Tan Tran", age:30})
     });
 
     socket.on("test", (msg) => console.log("test:", msg))
@@ -39,6 +39,14 @@
             socket.emit("UserUpdateLocation", {lat: 10.123, lng: 106.123})
         }, 3000)
     })
+
+    // if(lockTimer != null) {
+    //     clearInterval(lockTimer)
+    // }
+    //
+    // lockTimer = setInterval(() => {
+    //     socket.emit("test", "client to server")
+    // }, 1000)
 
     socket.on("your_profile", (msg) => console.log("your profile", msg));
     socket.on("authentication_failed", (msg) => console.log("authentication_failed", msg));

@@ -158,6 +158,36 @@ func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
 		// sau khi kết nối xong thì gửi client
 		s.Emit("test", "world")
 
+		// 3 cách
+		//ticker := time.NewTicker(time.Second)
+		//i := 0
+		//for {
+		//	<-ticker.C
+		//	i++
+		//	log.Println(i)
+		//	s.Emit("test", i)
+		//}
+
+		//ticker := time.NewTicker(time.Second)
+		//i := 0
+		//for {
+		//	select {
+		//	case <-ticker.C:
+		//		i++
+		//		s.Emit("test", i)
+		//	}
+		//}
+
+		//go func() {
+		//	i := 0
+		//	ticker := time.NewTicker(time.Second)
+		//	defer ticker.Stop()
+		//	for range ticker.C {
+		//		i++
+		//		s.Emit("test", i) // Ensure the event name matches the client's listener
+		//	}
+		//}()
+
 		return nil
 	})
 
@@ -179,6 +209,7 @@ func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
 		Age  int    `json:"age"`
 	}
 
+	// nhận và gửi dữ liệu có cấu trúc từ client lên server và ngược lại
 	server.OnEvent("/", "notice", func(s socketio.Conn, p Person) {
 		fmt.Println("server receive notice", p.Name, p.Age)
 
