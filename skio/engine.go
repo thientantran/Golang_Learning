@@ -3,6 +3,7 @@ package skio
 import (
 	"Food-delivery/component/tokenprovider/jwt"
 	userstorage "Food-delivery/module/user/storage"
+	"Food-delivery/module/user/transport/skuser"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -153,6 +154,8 @@ func (engine *rtEngine) Run(appCtx AppContext, r *gin.Engine) error {
 		//if user.GetRole() == "admin" {
 		//	appSck.Join("admin")
 		//}
+
+		server.OnEvent("/", "UserUpdateLocation", skuser.OnUserUpdateLocation(appCtx, user))
 	})
 
 	go server.Serve()
