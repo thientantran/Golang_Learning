@@ -2,25 +2,17 @@ package main
 
 import (
 	"Food-delivery/component/appctx"
-	"Food-delivery/component/tokenprovider/jwt"
 	"Food-delivery/component/uploadprovider"
 	"Food-delivery/middleware"
-	userstorage "Food-delivery/module/user/storage"
 	"Food-delivery/pubsub/localpb"
+	"Food-delivery/skio"
 	"Food-delivery/subscriber"
-	"context"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
-	"github.com/googollee/go-socket.io/engineio"
-	"github.com/googollee/go-socket.io/engineio/transport"
-	"github.com/googollee/go-socket.io/engineio/transport/websocket"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 type Restaurant struct {
@@ -102,7 +94,7 @@ func main() {
 	setupAdminRoute(appContext, v1)
 
 	r.StaticFile("/demo/", "demo.html")
-	startSocketIOServer(r, appContext)
+	skio.NewEngine().Run(appContext, r)
 
 	r.Run()
 
@@ -141,139 +133,140 @@ func main() {
 
 }
 
-func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
-	//server, err := socketio.NewServer(nil)
-	server, err := socketio.NewServer(&engineio.Options{
-		Transports: []transport.Transport{websocket.Default},
-	})
-
-	log.Println("Create connect socket", server)
-	if err != nil {
-		log.Println("socket io server error: ", err)
-	}
-
-	server.OnConnect("/", func(s socketio.Conn) error {
-		//s.SetContext("")
-		fmt.Println("Socket connected:", s.ID(), " IP:", s.RemoteAddr())
-
-		s.Join("shipper")
-		server.BroadcastToRoom("/", "shipper", "test", "shipper")
-
-		// sau khi kết nối xong thì gửi client
-		s.Emit("test", "world")
-
-		// 3 cách
-		//ticker := time.NewTicker(time.Second)
-		//i := 0
-		//for {
-		//	<-ticker.C
-		//	i++
-		//	log.Println(i)
-		//	s.Emit("test", i)
-		//}
-
-		//ticker := time.NewTicker(time.Second)
-		//i := 0
-		//for {
-		//	select {
-		//	case <-ticker.C:
-		//		i++
-		//		s.Emit("test", i)
-		//	}
-		//}
-
-		//go func() {
-		//	i := 0
-		//	ticker := time.NewTicker(time.Second)
-		//	defer ticker.Stop()
-		//	for range ticker.C {
-		//		i++
-		//		s.Emit("test", i) // Ensure the event name matches the client's listener
-		//	}
-		//}()
-
-		return nil
-	})
-
-	go func() {
-		for range time.NewTicker(time.Second).C {
-			server.BroadcastToRoom("/", "shipper", "test", "Wellcome to shipper room")
-		}
-	}()
-
-	server.OnError("/", func(s socketio.Conn, e error) {
-		fmt.Println("meet error:", e)
-	})
-
-	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
-		fmt.Println("closed", reason)
-		// remove socket from socket engine (from app context)
-	})
-
-	server.OnEvent("/", "authenticate", func(s socketio.Conn, token string) {
-		// validate token
-		// if false: s.Close() and return
-
-		// if true
-		// => UserId
-		// Fetch db find user by ID
-		// Here: s beliongs to who? (user_id_
-		// We need a map [user_id][]socketio.Conn
-
-		db := appCtx.GetMainDBConnection()
-		store := userstorage.NewSQLStore(db)
-
-		tokenProvider := jwt.NewTokenJWTProvider(appCtx.SecretKey())
-
-		payload, err := tokenProvider.Validate(token)
-
-		if err != nil {
-			s.Emit("authentication_failed", err)
-			s.Close()
-			return
-		}
-
-		user, err := store.FindUser(context.Background(), map[string]interface{}{"id": payload.UserID})
-
-		if err != nil {
-			s.Emit("authentication_failed", err.Error())
-			s.Close()
-			return
-		}
-
-		if user.Status == 0 {
-			s.Emit("authentication_failed", "you have been banned/deleted")
-			s.Close()
-			return
-		}
-
-		user.Mask(false)
-		s.Emit("your_profile", user)
-
-	})
-
-	server.OnEvent("/", "test", func(s socketio.Conn, msg string) {
-		log.Println("test event: ", msg)
-	})
-
-	type Person struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
-	}
-
-	// nhận và gửi dữ liệu có cấu trúc từ client lên server và ngược lại
-	server.OnEvent("/", "notice", func(s socketio.Conn, p Person) {
-		fmt.Println("server receive notice", p.Name, p.Age)
-
-		p.Age = 33
-		s.Emit("notice", p)
-	})
-
-	go server.Serve()
-	//defer server.Close() // bỏ cái này vào thì ko work
-	engine.GET("/socket.io/*any", gin.WrapH(server))
-	engine.POST("/socket.io/*any", gin.WrapH(server))
-}
+//
+//func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
+//	//server, err := socketio.NewServer(nil)
+//	server, err := socketio.NewServer(&engineio.Options{
+//		Transports: []transport.Transport{websocket.Default},
+//	})
+//
+//	log.Println("Create connect socket", server)
+//	if err != nil {
+//		log.Println("socket io server error: ", err)
+//	}
+//
+//	server.OnConnect("/", func(s socketio.Conn) error {
+//		//s.SetContext("")
+//		fmt.Println("Socket connected:", s.ID(), " IP:", s.RemoteAddr())
+//
+//		s.Join("shipper")
+//		server.BroadcastToRoom("/", "shipper", "test", "shipper")
+//
+//		// sau khi kết nối xong thì gửi client
+//		s.Emit("test", "world")
+//
+//		// 3 cách
+//		//ticker := time.NewTicker(time.Second)
+//		//i := 0
+//		//for {
+//		//	<-ticker.C
+//		//	i++
+//		//	log.Println(i)
+//		//	s.Emit("test", i)
+//		//}
+//
+//		//ticker := time.NewTicker(time.Second)
+//		//i := 0
+//		//for {
+//		//	select {
+//		//	case <-ticker.C:
+//		//		i++
+//		//		s.Emit("test", i)
+//		//	}
+//		//}
+//
+//		//go func() {
+//		//	i := 0
+//		//	ticker := time.NewTicker(time.Second)
+//		//	defer ticker.Stop()
+//		//	for range ticker.C {
+//		//		i++
+//		//		s.Emit("test", i) // Ensure the event name matches the client's listener
+//		//	}
+//		//}()
+//
+//		return nil
+//	})
+//
+//	go func() {
+//		for range time.NewTicker(time.Second).C {
+//			server.BroadcastToRoom("/", "shipper", "test", "Wellcome to shipper room")
+//		}
+//	}()
+//
+//	server.OnError("/", func(s socketio.Conn, e error) {
+//		fmt.Println("meet error:", e)
+//	})
+//
+//	server.OnDisconnect("/", func(s socketio.Conn, reason string) {
+//		fmt.Println("closed", reason)
+//		// remove socket from socket engine (from app context)
+//	})
+//
+//	server.OnEvent("/", "authenticate", func(s socketio.Conn, token string) {
+//		// validate token
+//		// if false: s.Close() and return
+//
+//		// if true
+//		// => UserId
+//		// Fetch db find user by ID
+//		// Here: s beliongs to who? (user_id_
+//		// We need a map [user_id][]socketio.Conn
+//
+//		db := appCtx.GetMainDBConnection()
+//		store := userstorage.NewSQLStore(db)
+//
+//		tokenProvider := jwt.NewTokenJWTProvider(appCtx.SecretKey())
+//
+//		payload, err := tokenProvider.Validate(token)
+//
+//		if err != nil {
+//			s.Emit("authentication_failed", err)
+//			s.Close()
+//			return
+//		}
+//
+//		user, err := store.FindUser(context.Background(), map[string]interface{}{"id": payload.UserID})
+//
+//		if err != nil {
+//			s.Emit("authentication_failed", err.Error())
+//			s.Close()
+//			return
+//		}
+//
+//		if user.Status == 0 {
+//			s.Emit("authentication_failed", "you have been banned/deleted")
+//			s.Close()
+//			return
+//		}
+//
+//		user.Mask(false)
+//		s.Emit("your_profile", user)
+//
+//	})
+//
+//	server.OnEvent("/", "test", func(s socketio.Conn, msg string) {
+//		log.Println("test event: ", msg)
+//	})
+//
+//	type Person struct {
+//		Name string `json:"name"`
+//		Age  int    `json:"age"`
+//	}
+//
+//	// nhận và gửi dữ liệu có cấu trúc từ client lên server và ngược lại
+//	server.OnEvent("/", "notice", func(s socketio.Conn, p Person) {
+//		fmt.Println("server receive notice", p.Name, p.Age)
+//
+//		p.Age = 33
+//		s.Emit("notice", p)
+//	})
+//
+//	go server.Serve()
+//	//defer server.Close() // bỏ cái này vào thì ko work
+//	engine.GET("/socket.io/*any", gin.WrapH(server))
+//	engine.POST("/socket.io/*any", gin.WrapH(server))
+//}
 
 //func startSocketIOServer(engine *gin.Engine, appCtx appctx.AppContext) {
 //	server, err := socketio.NewServer(nil)

@@ -33,7 +33,7 @@
     socket.on("authenticated", (msg) => {
         console.log("authenticated", msg)
 
-        if(locTimer != null) {
+        if(lockTimer != null) {
             clearInterval(lockTimer)
         }
 
