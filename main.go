@@ -94,7 +94,11 @@ func main() {
 	setupAdminRoute(appContext, v1)
 
 	r.StaticFile("/demo/", "demo.html")
-	skio.NewEngine().Run(appContext, r)
+
+	rtEngine := skio.NewEngine()
+	appContext.SetRealTimeEngine(rtEngine)
+
+	_ = rtEngine.Run(appContext, r)
 
 	r.Run()
 
