@@ -4,6 +4,7 @@ import (
 	"Food-delivery/common"
 	restaurantmodel "Food-delivery/module/restaurant/model"
 	"context"
+	"go.opencensus.io/trace"
 )
 
 type ListRestaurantRepo interface {
@@ -27,8 +28,13 @@ func (biz *listRestaurantBiz) ListRestaurant(
 	filter *restaurantmodel.Filter,
 	paging *common.Paging,
 ) ([]restaurantmodel.Restaurant, error) {
+	ctx1, span := trace.StartSpan(ctx, "biz.list_restaurant")
+	// phải truyền lại ctx1 thay vì ctx, để jaeder phân cấp được cái span nào trong span nào, nghiệp vụ nào trong nghiệp vụ nào
 	// slice đã là reference type (con trỏ rồi) nên không cần dùng pointer
-	result, err := biz.repo.ListRestaurant(ctx, filter, paging)
+	result, err := biz.repo.ListRestaurant(ctx1, filter, paging)
+
+	span.End()
+
 	if err != nil {
 		return nil, common.ErrCannotListEntity(restaurantmodel.EntityName, err)
 	}

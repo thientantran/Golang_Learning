@@ -4,6 +4,7 @@ import (
 	"Food-delivery/common"
 	restaurantmodel "Food-delivery/module/restaurant/model"
 	"context"
+	"go.opencensus.io/trace"
 )
 
 // hệ thống tăng tải
@@ -33,10 +34,12 @@ func (s *sqlStore) ListDataWithCondition(
 			db = db.Where("status in (?)", f.Status)
 		}
 	}
-
+	_, span := trace.StartSpan(context, "store.restaurant.list_data_with_condition.count")
 	if err := db.Count(&paging.Total).Error; err != nil {
+		span.End()
 		return nil, common.ErrDB(err)
 	}
+	span.End()
 	// count xong moi preload
 	for i := range moreKeys {
 		db = db.Preload(moreKeys[i])
@@ -52,6 +55,9 @@ func (s *sqlStore) ListDataWithCondition(
 		offset := (paging.Page - 1) * paging.Limit
 		db.Offset(offset)
 	}
+
+	_, span2 := trace.StartSpan(context, "store.restaurant.list_data_with_condition.Find")
+	defer span2.End()
 	if err := db.Limit(paging.Limit).Order("id desc").Find(&result).Error; err != nil {
 		return nil, common.ErrDB(err)
 	}
