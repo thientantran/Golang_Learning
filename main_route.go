@@ -2,10 +2,12 @@ package main
 
 import (
 	"Food-delivery/component/appctx"
+	"Food-delivery/memcache"
 	"Food-delivery/middleware"
 	"Food-delivery/module/restaurant/transport/ginrestaurant"
 	"Food-delivery/module/restaurantlike/transport/ginrstlike"
 	"Food-delivery/module/upload/transport/ginupload"
+	userstorage "Food-delivery/module/user/storage"
 	"Food-delivery/module/user/transport/ginuser"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -13,12 +15,15 @@ import (
 )
 
 func setupRoute(appContext appctx.AppContext, v1 *gin.RouterGroup) {
+	userStore := userstorage.NewSQLStore(appContext.GetMainDBConnection())
+	userCachingStore := memcache.NewUserCaching(memcache.NewCaching(), userStore)
+
 	v1.POST("/upload", ginupload.UploadImage(appContext))
 
 	v1.POST("/register", ginuser.Register(appContext))
 	v1.POST("/authenticate", ginuser.Login(appContext))
-	v1.GET("/profile", middleware.RequireAuth(appContext), ginuser.Profile(appContext))
-	restaurants := v1.Group("/restaurants", middleware.RequireAuth(appContext))
+	v1.GET("/profile", middleware.RequireAuth(appContext, userCachingStore), ginuser.Profile(appContext))
+	restaurants := v1.Group("/restaurants", middleware.RequireAuth(appContext, userCachingStore))
 	restaurants.POST("", ginrestaurant.CreateRestaurant(appContext))
 
 	// GET a restaurant
